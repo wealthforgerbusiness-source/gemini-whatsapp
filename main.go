@@ -19,11 +19,11 @@ import (
 	"github.com/skip2/go-qrcode"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
-
-	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
@@ -60,41 +60,57 @@ var (
 )
 
 func main() {
-	log.Println("========================================")
-	log.Println("   WHATSAPP AI BOT - DEMARRAGE")
-	log.Println("========================================")
+	log.Println("======================================")
+	log.Println("       WHATSAPP AI BOT - START")
+	log.Println("======================================")
 
-	// --------------------------------------------------
-	// Variables d'environnement
-	// --------------------------------------------------
+	// ==================================================
+	// VARIABLES D'ENVIRONNEMENT
+	// ==================================================
 
-	sheetID = strings.TrimSpace(os.Getenv("GOOGLE_SHEET_ID"))
-	geminiKey = strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
-	credJSON := strings.TrimSpace(os.Getenv("GOOGLE_CREDENTIALS_JSON"))
+	sheetID = strings.TrimSpace(
+		os.Getenv("GOOGLE_SHEET_ID"),
+	)
+
+	geminiKey = strings.TrimSpace(
+		os.Getenv("GEMINI_API_KEY"),
+	)
+
+	credJSON = strings.TrimSpace(
+		os.Getenv("GOOGLE_CREDENTIALS_JSON"),
+	)
 
 	if sheetID == "" {
-		log.Fatal("GOOGLE_SHEET_ID est obligatoire")
+		log.Fatal(
+			"GOOGLE_SHEET_ID est obligatoire",
+		)
 	}
 
 	if geminiKey == "" {
-		log.Fatal("GEMINI_API_KEY est obligatoire")
+		log.Fatal(
+			"GEMINI_API_KEY est obligatoire",
+		)
 	}
 
 	if credJSON == "" {
-		log.Fatal("GOOGLE_CREDENTIALS_JSON est obligatoire")
+		log.Fatal(
+			"GOOGLE_CREDENTIALS_JSON est obligatoire",
+		)
 	}
 
 	ctx := context.Background()
 
-	// --------------------------------------------------
-	// Google Sheets
-	// --------------------------------------------------
+	// ==================================================
+	// GOOGLE SHEETS
+	// ==================================================
 
 	var err error
 
 	sheetsSvc, err = sheets.NewService(
 		ctx,
-		option.WithCredentialsJSON([]byte(credJSON)),
+		option.WithCredentialsJSON(
+			[]byte(credJSON),
+		),
 	)
 
 	if err != nil {
@@ -106,9 +122,9 @@ func main() {
 
 	log.Println("✓ Google Sheets connecté")
 
-	// --------------------------------------------------
-	// Base SQLite WhatsApp
-	// --------------------------------------------------
+	// ==================================================
+	// SQLITE / WHATSAPP STORE
+	// ==================================================
 
 	dbLog := waLog.Stdout(
 		"Database",
@@ -130,11 +146,11 @@ func main() {
 		)
 	}
 
-	log.Println("✓ Base SQLite initialisée")
+	log.Println("✓ Base WhatsApp SQLite initialisée")
 
-	// --------------------------------------------------
-	// Récupération du device WhatsApp
-	// --------------------------------------------------
+	// ==================================================
+	// DEVICE WHATSAPP
+	// ==================================================
 
 	deviceStore, err := dbContainer.GetFirstDevice(ctx)
 
@@ -145,9 +161,9 @@ func main() {
 		)
 	}
 
-	// --------------------------------------------------
-	// Client WhatsApp
-	// --------------------------------------------------
+	// ==================================================
+	// CLIENT WHATSAPP
+	// ==================================================
 
 	clientLog := waLog.Stdout(
 		"WhatsApp",
@@ -160,22 +176,29 @@ func main() {
 		clientLog,
 	)
 
-	waClient.AddEventHandler(eventHandler)
+	waClient.AddEventHandler(
+		eventHandler,
+	)
 
-	// --------------------------------------------------
-	// Connexion / QR Code
-	// --------------------------------------------------
+	// ==================================================
+	// CONNEXION WHATSAPP
+	// ==================================================
 
 	if waClient.Store.ID == nil {
 
-		log.Println("Aucun compte WhatsApp associé.")
-		log.Println("Génération du QR Code...")
+		log.Println(
+			"Aucun compte WhatsApp connecté.",
+		)
+
+		log.Println(
+			"Génération du QR Code...",
+		)
 
 		qrChan, err := waClient.GetQRChannel(ctx)
 
 		if err != nil {
 			log.Fatalf(
-				"Impossible de créer le canal QR: %v",
+				"Erreur création canal QR: %v",
 				err,
 			)
 		}
@@ -194,7 +217,7 @@ func main() {
 	} else {
 
 		log.Println(
-			"Session WhatsApp existante détectée.",
+			"Session WhatsApp existante trouvée.",
 		)
 
 		err = waClient.Connect()
@@ -208,16 +231,29 @@ func main() {
 
 		setLoggedIn(true)
 
-		log.Println("✓ WhatsApp reconnecté")
+		log.Println(
+			"✓ WhatsApp reconnecté",
+		)
 	}
 
-	// --------------------------------------------------
-	// Serveur Web
-	// --------------------------------------------------
+	// ==================================================
+	// SERVEUR WEB
+	// ==================================================
 
-	http.HandleFunc("/", serveDashboard)
-	http.HandleFunc("/api/status", handleAPIStatus)
-	http.HandleFunc("/api/toggle", handleAPIToggle)
+	http.HandleFunc(
+		"/",
+		serveDashboard,
+	)
+
+	http.HandleFunc(
+		"/api/status",
+		handleAPIStatus,
+	)
+
+	http.HandleFunc(
+		"/api/toggle",
+		handleAPIToggle,
+	)
 
 	port := os.Getenv("PORT")
 
@@ -226,17 +262,20 @@ func main() {
 	}
 
 	log.Printf(
-		"✓ Serveur HTTP démarré sur le port %s",
+		"✓ Serveur démarré sur le port %s",
 		port,
 	)
 
 	log.Fatal(
-		http.ListenAndServe(":"+port, nil),
+		http.ListenAndServe(
+			":"+port,
+			nil,
+		),
 	)
 }
 
 // ======================================================
-// QR CODE WHATSAPP
+// QR CODE
 // ======================================================
 
 func handleQR(
@@ -272,7 +311,9 @@ func handleQR(
 
 			setLoggedIn(false)
 
-			log.Println("✓ Nouveau QR Code disponible")
+			log.Println(
+				"✓ Nouveau QR Code généré",
+			)
 
 		case "success":
 
@@ -295,13 +336,28 @@ func handleQR(
 			setLoggedIn(false)
 
 			log.Println(
-				"QR Code expiré.",
+				"QR Code expiré",
 			)
+
+		case "error":
+
+			qrMutex.Lock()
+			currentQR = ""
+			qrMutex.Unlock()
+
+			setLoggedIn(false)
+
+			if evt.Error != nil {
+				log.Printf(
+					"Erreur QR WhatsApp: %v",
+					evt.Error,
+				)
+			}
 
 		default:
 
 			log.Printf(
-				"Événement WhatsApp: %s",
+				"Événement QR WhatsApp: %s",
 				evt.Event,
 			)
 		}
@@ -309,16 +365,18 @@ func handleQR(
 }
 
 // ======================================================
-// ETAT DE CONNEXION
+// ETAT CONNEXION
 // ======================================================
 
 func setLoggedIn(value bool) {
+
 	statusMutex.Lock()
 	isLoggedIn = value
 	statusMutex.Unlock()
 }
 
 func getLoggedIn() bool {
+
 	statusMutex.RLock()
 	defer statusMutex.RUnlock()
 
@@ -326,7 +384,7 @@ func getLoggedIn() bool {
 }
 
 // ======================================================
-// CONFIGURATION GOOGLE SHEETS
+// GOOGLE SHEETS CONFIG
 // ======================================================
 
 func getConfig() (Config, error) {
@@ -349,7 +407,7 @@ func getConfig() (Config, error) {
 
 	if len(resp.Values) < 7 {
 		return Config{}, fmt.Errorf(
-			"la feuille Config doit contenir au moins 7 lignes en colonne B",
+			"la feuille Config doit contenir 7 lignes minimum",
 		)
 	}
 
@@ -371,7 +429,7 @@ func getConfig() (Config, error) {
 		)
 	}
 
-	limitValue := ""
+	limitValue := "0"
 
 	if len(resp.Values[2]) > 0 {
 		limitValue = fmt.Sprintf(
@@ -380,7 +438,7 @@ func getConfig() (Config, error) {
 		)
 	}
 
-	consumedValue := ""
+	consumedValue := "0"
 
 	if len(resp.Values[3]) > 0 {
 		consumedValue = fmt.Sprintf(
@@ -438,19 +496,18 @@ func getConfig() (Config, error) {
 }
 
 // ======================================================
-// RECEPTION DES MESSAGES WHATSAPP
+// EVENEMENTS WHATSAPP
 // ======================================================
 
 func eventHandler(evt interface{}) {
 
 	messageEvent, ok := evt.(*events.Message)
 
-	if !ok {
+	if !ok || messageEvent == nil {
 		return
 	}
 
-	if messageEvent == nil ||
-		messageEvent.Message == nil {
+	if messageEvent.Message == nil {
 		return
 	}
 
@@ -459,9 +516,9 @@ func eventHandler(evt interface{}) {
 		return
 	}
 
-	// --------------------------------------------------
-	// Récupérer le texte
-	// --------------------------------------------------
+	// ==================================================
+	// EXTRAIRE MESSAGE
+	// ==================================================
 
 	msgText := extractMessageText(
 		messageEvent,
@@ -471,9 +528,9 @@ func eventHandler(evt interface{}) {
 		return
 	}
 
-	// --------------------------------------------------
-	// JID du chat
-	// --------------------------------------------------
+	// ==================================================
+	// CHAT JID
+	// ==================================================
 
 	chatJID := messageEvent.Info.Chat
 
@@ -481,9 +538,9 @@ func eventHandler(evt interface{}) {
 		return
 	}
 
-	// --------------------------------------------------
-	// Configuration
-	// --------------------------------------------------
+	// ==================================================
+	// CONFIGURATION
+	// ==================================================
 
 	cfg, err := getConfig()
 
@@ -497,14 +554,14 @@ func eventHandler(evt interface{}) {
 
 	if !cfg.AdminGlobal {
 		log.Println(
-			"Message ignoré: AdminGlobal désactivé.",
+			"Message ignoré: AdminGlobal=false",
 		)
 		return
 	}
 
 	if !cfg.BotActif {
 		log.Println(
-			"Message ignoré: BotActif désactivé.",
+			"Message ignoré: BotActif=false",
 		)
 		return
 	}
@@ -513,7 +570,7 @@ func eventHandler(evt interface{}) {
 		cfg.TokensConsommes >= cfg.LimiteTokens {
 
 		log.Println(
-			"Limite de tokens atteinte.",
+			"Limite de tokens atteinte",
 		)
 
 		return
@@ -525,9 +582,9 @@ func eventHandler(evt interface{}) {
 		msgText,
 	)
 
-	// --------------------------------------------------
-	// Traitement asynchrone
-	// --------------------------------------------------
+	// ==================================================
+	// TRAITEMENT AI
+	// ==================================================
 
 	go processAIResponse(
 		chatJID,
@@ -537,7 +594,7 @@ func eventHandler(evt interface{}) {
 }
 
 // ======================================================
-// EXTRACTION DU MESSAGE
+// EXTRACTION TEXTE
 // ======================================================
 
 func extractMessageText(
@@ -559,7 +616,8 @@ func extractMessageText(
 	}
 
 	// Message texte étendu
-	extended := evt.Message.GetExtendedTextMessage()
+	extended :=
+		evt.Message.GetExtendedTextMessage()
 
 	if extended != nil {
 
@@ -576,37 +634,29 @@ func extractMessageText(
 }
 
 // ======================================================
-// GEMINI
+// GEMINI + REPONSE WHATSAPP
 // ======================================================
 
 func processAIResponse(
-	chatJID interface {
-		String() string
-	},
+	chatJID types.JID,
 	userMessage string,
 	cfg Config,
 ) {
 
-	// Cette fonction reçoit un type générique pour éviter
-	// de mélanger la logique Gemini avec WhatsApp.
-	// Le vrai JID est récupéré ci-dessous.
-
-	jidString := chatJID.String()
-
-	// --------------------------------------------------
-	// Récupérer l'historique
-	// --------------------------------------------------
+	// ==================================================
+	// HISTORIQUE
+	// ==================================================
 
 	history := getHistory(
-		jidString,
+		chatJID.String(),
 	)
 
-	// --------------------------------------------------
-	// Modèle Gemini
-	// --------------------------------------------------
+	// ==================================================
+	// MODELE GEMINI
+	// ==================================================
 
-	model := os.Getenv(
-		"GEMINI_MODEL",
+	model := strings.TrimSpace(
+		os.Getenv("GEMINI_MODEL"),
 	)
 
 	if model == "" {
@@ -618,9 +668,9 @@ func processAIResponse(
 		model,
 	)
 
-	// --------------------------------------------------
-	// Construction de la conversation
-	// --------------------------------------------------
+	// ==================================================
+	// TYPES GEMINI
+	// ==================================================
 
 	type Part struct {
 		Text string `json:"text"`
@@ -637,10 +687,13 @@ func processAIResponse(
 		len(history)+1,
 	)
 
-	// Historique
-	for _, h := range history {
+	// ==================================================
+	// HISTORIQUE
+	// ==================================================
 
-		role := h["role"]
+	for _, item := range history {
+
+		role := item["role"]
 
 		if role != "user" &&
 			role != "model" {
@@ -648,7 +701,7 @@ func processAIResponse(
 		}
 
 		text := strings.TrimSpace(
-			h["text"],
+			item["text"],
 		)
 
 		if text == "" {
@@ -668,7 +721,10 @@ func processAIResponse(
 		)
 	}
 
-	// Nouveau message utilisateur
+	// ==================================================
+	// NOUVEAU MESSAGE
+	// ==================================================
+
 	contents = append(
 		contents,
 		Content{
@@ -681,9 +737,9 @@ func processAIResponse(
 		},
 	)
 
-	// --------------------------------------------------
-	// Instruction système
-	// --------------------------------------------------
+	// ==================================================
+	// REQUETE GEMINI
+	// ==================================================
 
 	requestBody := map[string]interface{}{
 		"systemInstruction": map[string]interface{}{
@@ -709,14 +765,10 @@ func processAIResponse(
 		return
 	}
 
-	// --------------------------------------------------
-	// Requête Gemini
-	// --------------------------------------------------
-
 	req, err := http.NewRequest(
 		http.MethodPost,
 		apiURL,
-		bytes.NewBuffer(jsonBody),
+		bytes.NewReader(jsonBody),
 	)
 
 	if err != nil {
@@ -761,6 +813,10 @@ func processAIResponse(
 		return
 	}
 
+	// ==================================================
+	// ERREUR HTTP
+	// ==================================================
+
 	if resp.StatusCode < 200 ||
 		resp.StatusCode >= 300 {
 
@@ -773,9 +829,9 @@ func processAIResponse(
 		return
 	}
 
-	// --------------------------------------------------
-	// Réponse Gemini
-	// --------------------------------------------------
+	// ==================================================
+	// REPONSE GEMINI
+	// ==================================================
 
 	var geminiResp struct {
 		Candidates []struct {
@@ -789,29 +845,25 @@ func processAIResponse(
 		UsageMetadata struct {
 			TotalTokenCount int64 `json:"totalTokenCount"`
 		} `json:"usageMetadata"`
-
-		Error struct {
-			Message string `json:"message"`
-		} `json:"error"`
 	}
 
-	if err := json.Unmarshal(
+	err = json.Unmarshal(
 		body,
 		&geminiResp,
-	); err != nil {
+	)
 
+	if err != nil {
 		log.Printf(
 			"Erreur décodage réponse Gemini: %v",
 			err,
 		)
-
 		return
 	}
 
 	if len(geminiResp.Candidates) == 0 {
 
 		log.Printf(
-			"Gemini n'a retourné aucune réponse: %s",
+			"Gemini n'a retourné aucun candidat: %s",
 			string(body),
 		)
 
@@ -819,11 +871,13 @@ func processAIResponse(
 	}
 
 	if len(
-		geminiResp.Candidates[0].Content.Parts,
+		geminiResp.Candidates[0].
+			Content.
+			Parts,
 	) == 0 {
 
 		log.Println(
-			"Gemini a retourné un candidat sans texte.",
+			"Gemini a retourné une réponse sans texte",
 		)
 
 		return
@@ -839,7 +893,7 @@ func processAIResponse(
 
 	if aiReply == "" {
 		log.Println(
-			"Réponse Gemini vide.",
+			"Gemini a retourné une réponse vide",
 		)
 		return
 	}
@@ -849,25 +903,13 @@ func processAIResponse(
 			UsageMetadata.
 			TotalTokenCount
 
-	// --------------------------------------------------
-	// Envoyer la réponse au BON chat WhatsApp
-	// --------------------------------------------------
-
-	// Reconvertir le JID string en JID WhatsApp
-	targetJID, err := parseJID(jidString)
-
-	if err != nil {
-		log.Printf(
-			"JID WhatsApp invalide %s: %v",
-			jidString,
-			err,
-		)
-		return
-	}
+	// ==================================================
+	// ENVOI WHATSAPP
+	// ==================================================
 
 	_, err = waClient.SendMessage(
 		context.Background(),
-		targetJID,
+		chatJID,
 		&waE2E.Message{
 			Conversation: proto.String(
 				aiReply,
@@ -885,41 +927,382 @@ func processAIResponse(
 
 	log.Printf(
 		"✓ Réponse envoyée à %s",
-		jidString,
+		chatJID.String(),
 	)
 
-	// --------------------------------------------------
-	// Sauvegarde historique
-	// --------------------------------------------------
+	// ==================================================
+	// SAUVEGARDE HISTORIQUE
+	// ==================================================
 
 	saveHistory(
-		jidString,
+		chatJID.String(),
 		userMessage,
 		aiReply,
 	)
 
-	// --------------------------------------------------
-	// Mise à jour des tokens
-	// --------------------------------------------------
+	// ==================================================
+	// TOKENS
+	// ==================================================
 
 	if tokensUsed > 0 {
-		updateTokens(
-			tokensUsed,
+		updateTokens(tokensUsed)
+	}
+}
+
+// ======================================================
+// HISTORIQUE GOOGLE SHEETS
+// ======================================================
+
+func getHistory(
+	sender string,
+) []map[string]string {
+
+	resp, err := sheetsSvc.
+		Spreadsheets.
+		Values.
+		Get(
+			sheetID,
+			"History!A2:D",
+		).
+		Do()
+
+	history := make(
+		[]map[string]string,
+		0,
+	)
+
+	if err != nil {
+		log.Printf(
+			"Erreur lecture History: %v",
+			err,
+		)
+
+		return history
+	}
+
+	for _, row := range resp.Values {
+
+		if len(row) < 4 {
+			continue
+		}
+
+		rowSender :=
+			fmt.Sprintf(
+				"%v",
+				row[1],
+			)
+
+		if rowSender != sender {
+			continue
+		}
+
+		role :=
+			fmt.Sprintf(
+				"%v",
+				row[2],
+			)
+
+		text :=
+			fmt.Sprintf(
+				"%v",
+				row[3],
+			)
+
+		history = append(
+			history,
+			map[string]string{
+				"role": role,
+				"text": text,
+			},
+		)
+	}
+
+	return history
+}
+
+// ======================================================
+// SAUVEGARDE HISTORIQUE
+// ======================================================
+
+func saveHistory(
+	sender string,
+	userMsg string,
+	aiMsg string,
+) {
+
+	now := time.Now().
+		Format(
+			"2006-01-02 15:04:05",
+		)
+
+	values := [][]interface{}{
+		{
+			now,
+			sender,
+			"user",
+			userMsg,
+		},
+		{
+			now,
+			sender,
+			"model",
+			aiMsg,
+		},
+	}
+
+	vr := &sheets.ValueRange{
+		Values: values,
+	}
+
+	_, err := sheetsSvc.
+		Spreadsheets.
+		Values.
+		Append(
+			sheetID,
+			"History!A:D",
+			vr,
+		).
+		ValueInputOption(
+			"USER_ENTERED",
+		).
+		Do()
+
+	if err != nil {
+		log.Printf(
+			"Erreur sauvegarde History: %v",
+			err,
 		)
 	}
 }
 
 // ======================================================
-// JID
+// TOKENS
 // ======================================================
 
-func parseJID(
-	value string,
-) (interface {
-	String() string
-}, error) {
+func updateTokens(
+	used int64,
+) {
 
-	// Cette fonction est remplacée directement par la version
-	// typée ci-dessous.
-	return parseWhatsAppJID(value)
+	if used <= 0 {
+		return
+	}
+
+	tokenMutex.Lock()
+	defer tokenMutex.Unlock()
+
+	cfg, err := getConfig()
+
+	if err != nil {
+		log.Printf(
+			"Erreur récupération tokens: %v",
+			err,
+		)
+		return
+	}
+
+	newTotal :=
+		cfg.TokensConsommes + used
+
+	vr := &sheets.ValueRange{
+		Values: [][]interface{}{
+			{
+				newTotal,
+			},
+		},
+	}
+
+	_, err = sheetsSvc.
+		Spreadsheets.
+		Values.
+		Update(
+			sheetID,
+			"Config!B4",
+			vr,
+		).
+		ValueInputOption(
+			"USER_ENTERED",
+		).
+		Do()
+
+	if err != nil {
+		log.Printf(
+			"Erreur mise à jour tokens: %v",
+			err,
+		)
+		return
+	}
+
+	log.Printf(
+		"✓ Tokens utilisés: +%d | Total: %d",
+		used,
+		newTotal,
+	)
+}
+
+// ======================================================
+// DASHBOARD
+// ======================================================
+
+func serveDashboard(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	if r.URL.Path != "/" {
+		http.NotFound(
+			w,
+			r,
+		)
+		return
+	}
+
+	http.ServeFile(
+		w,
+		r,
+		"index.html",
+	)
+}
+
+// ======================================================
+// API STATUS
+// ======================================================
+
+func handleAPIStatus(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json; charset=utf-8",
+	)
+
+	cfg, err := getConfig()
+
+	if err != nil {
+
+		http.Error(
+			w,
+			`{"error":"Impossible de lire la configuration"}`,
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	qrMutex.RLock()
+	qr := currentQR
+	qrMutex.RUnlock()
+
+	response := map[string]interface{}{
+		"admin":     cfg.AdminGlobal,
+		"actif":     cfg.BotActif,
+		"limite":    cfg.LimiteTokens,
+		"consommes": cfg.TokensConsommes,
+		"connected": getLoggedIn(),
+		"qr":        qr,
+	}
+
+	err = json.NewEncoder(w).
+		Encode(response)
+
+	if err != nil {
+		log.Printf(
+			"Erreur réponse API status: %v",
+			err,
+		)
+	}
+}
+
+// ======================================================
+// API TOGGLE
+// ======================================================
+
+func handleAPIToggle(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json; charset=utf-8",
+	)
+
+	cfg, err := getConfig()
+
+	if err != nil {
+
+		http.Error(
+			w,
+			`{"error":"Configuration inaccessible"}`,
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	if !cfg.AdminGlobal {
+
+		http.Error(
+			w,
+			`{"error":"Opération non autorisée par l'Admin"}`,
+			http.StatusForbidden,
+		)
+
+		return
+	}
+
+	nouvelEtat := !cfg.BotActif
+
+	vr := &sheets.ValueRange{
+		Values: [][]interface{}{
+			{
+				nouvelEtat,
+			},
+		},
+	}
+
+	_, err = sheetsSvc.
+		Spreadsheets.
+		Values.
+		Update(
+			sheetID,
+			"Config!B2",
+			vr,
+		).
+		ValueInputOption(
+			"USER_ENTERED",
+		).
+		Do()
+
+	if err != nil {
+
+		log.Printf(
+			"Erreur toggle bot: %v",
+			err,
+		)
+
+		http.Error(
+			w,
+			`{"error":"Impossible de modifier le statut du bot"}`,
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	err = json.NewEncoder(w).
+		Encode(
+			map[string]interface{}{
+				"status": "ok",
+				"actif":  nouvelEtat,
+			},
+		)
+
+	if err != nil {
+		log.Printf(
+			"Erreur réponse toggle: %v",
+			err,
+		)
+	}
 }
