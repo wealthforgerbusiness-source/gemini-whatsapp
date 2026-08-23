@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; display: inline-block; max-width: 400px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn { padding: 12px 24px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        .btn-on { background: #22c55e; color: white; }
+        .btn-off { background: #ef4444; color: white; }
+        .stat { margin: 10px 0; font-size: 18px; }
+        #qr-code { width: 200px; height: 200px; margin: 15px auto; display: none; background: #fff; padding: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Tableau de Bord Bot WhatsApp</h2>
+        <div id="status-connexion" class="stat">Statut : Chargement...</div>
+        <img id="qr-code" src="" alt="Scanner QR Code">
+        <hr style="border-color: #334155; margin: 20px 0;">
+        <div class="stat">Tokens : <span id="tokens-used">0</span> / <span id="tokens-limit">0</span></div>
+        <button id="toggle-btn" class="btn btn-off" onclick="toggleBot()">Désactivé</button>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                document.getElementById('tokens-used').innerText = data.consommes.toLocaleString();
+                document.getElementById('tokens-limit').innerText = data.limite.toLocaleString();
+
+                const btn = document.getElementById('toggle-btn');
+                if (data.actif) {
+                    btn.innerText = "DESACTIVER LE BOT";
+                    btn.className = "btn btn-off";
+                } else {
+                    btn.innerText = "ACTIVER LE BOT";
+                    btn.className = "btn btn-on";
+                }
+
+                const qrImg = document.getElementById('qr-code');
+                const statusDiv = document.getElementById('status-connexion');
+                if (data.connected) {
+                    statusDiv.innerText = "Statut : WhatsApp Connecté ✅";
+                    statusDiv.style.color = "#22c55e";
+                    qrImg.style.display = "none";
+                } else if (data.qr) {
+                    statusDiv.innerText = "Scannez le QR Code sur WhatsApp :";
+                    statusDiv.style.color = "#f59e0b";
+                    qrImg.src = data.qr;
+                    qrImg.style.display = "block";
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function toggleBot() {
+            await fetch('/api/toggle', { method: 'POST' });
+            fetchStatus();
+        }
+
+        setInterval(fetchStatus, 3000);
+        fetchStatus();
+    </script>
+</body>
+</html>
