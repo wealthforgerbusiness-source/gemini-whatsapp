@@ -9,9 +9,8 @@ RUN apk add --no-cache \
 
 ENV CGO_ENABLED=1
 
-COPY go.mod ./
+COPY go.mod go.sum ./
 
-RUN go mod tidy
 RUN go mod download
 
 COPY . .
