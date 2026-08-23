@@ -8,3 +8,5 @@ require (
 	go.mau.fi/whatsmeow v0.0.0-20240327124311-8c54e3f32c32
 	google.golang.org/api v0.170.0
 )
+
+replace go.mau.fi/whatsmeow => go.mau.fi/whatsmeow v0.0.0-20240327124311-8c54e3f32c32
