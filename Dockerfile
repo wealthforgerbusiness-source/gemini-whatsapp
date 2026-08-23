@@ -1,16 +1,17 @@
 FROM golang:1.22-alpine
 
-# Installation de git, gcc et musl-dev indispensables pour Whatsmeow et SQLite
+# Outils système indispensables (Git pour rapatrier le dépôt whatsmeow + GCC pour SQLite)
 RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
-RUN go mod download
+
+# Télécharge et synchronise automatiquement la bonne révision depuis GitHub
+RUN go get go.mau.fi/whatsmeow@latest && go mod tidy
 
 COPY . .
 
-# Activation de CGO requis pour SQLite
 ENV CGO_ENABLED=1
 
 RUN go build -o main .
