@@ -1,14 +1,20 @@
 FROM golang:1.22-alpine
 
-# Outils système indispensables (Git pour rapatrier le dépôt whatsmeow + GCC pour SQLite)
+# Outils système nécessaires
 RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Copie juste go.mod
+COPY go.mod ./
 
-# Télécharge et synchronise automatiquement la bonne révision depuis GitHub
-RUN go get go.mau.fi/whatsmeow@latest && go mod tidy
+# Récupération automatique de la dernière version valide directement sur le serveur
+RUN go get go.mau.fi/whatsmeow@latest && \
+    go get github.com/glebarez/go-sqlite@latest && \
+    go get github.com/skip2/go-qrcode@latest && \
+    go get google.golang.org/api/option@latest && \
+    go get google.golang.org/api/sheets/v4@latest && \
+    go mod tidy
 
 COPY . .
 
