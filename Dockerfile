@@ -9,12 +9,17 @@ RUN apk add --no-cache \
 
 ENV CGO_ENABLED=1
 
-COPY go.mod go.sum ./
+COPY go.mod ./
 
-RUN go mod download
+# Génère les dépendances ET le go.sum
+RUN go mod tidy
 
 COPY . .
 
+# Vérification finale des dépendances
+RUN go mod tidy
+
+# Compilation
 RUN go build -o app .
 
 EXPOSE 8080
